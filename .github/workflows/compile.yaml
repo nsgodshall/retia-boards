@@ -46,7 +46,7 @@ jobs:
   
       - name: build
         id: parallel_builds
-        continu-on-error: true
+        continue-on-error: true
         run: |
           set +e
           
