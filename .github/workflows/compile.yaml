@@ -1,0 +1,15 @@
+name: My Workflow
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get latest meshtastic version 
+        id: meshtastic_tag
+        run: |
+          result=$(curl -sL https://api.github.com/repos/meshtastic/firmware/releases/latest | jq -r '.tag_name' )
+          echo "result=$result" >> $GITHUB_OUTPUT
+
+      - name: test
+        run: echo "Latest meshtastic version is ${{ steps.meshtastic_tag.outputs.result }}"
