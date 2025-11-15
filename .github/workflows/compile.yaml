@@ -6,10 +6,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Get latest meshtastic version 
-        id: meshtastic_tag
+        id: latest_meshtastic_tag
         run: |
           result=$(curl -sL https://api.github.com/repos/meshtastic/firmware/releases/latest | jq -r '.tag_name' )
           echo "result=$result" >> $GITHUB_OUTPUT
 
-      - name: test
-        run: echo "Latest meshtastic version is ${{ steps.meshtastic_tag.outputs.result }}"
+      - name: Check if release exists locally
+        id: check_release
+        env: 
+          RELEASE_TAG: $ {{ steps.latest_meshtastic_tag.outputs.result }}
+        run: | 
+          set -e
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install platformIO cli 
+        run: |
+          curl -fsSL -o get-platformio.py https://raw.githubusercontent.com/platformio/platformio-core-installer/master/get-platformio.py
+          python3 get-platformio.py
+      
+      - name: Install meshtastic firmware
+        run: |
+          git clone https://github.com/meshtastic/firmware
