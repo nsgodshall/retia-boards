@@ -1,7 +1,7 @@
 name: My Workflow
 on: [push]
 jobs:
-  preamble:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -14,7 +14,7 @@ jobs:
       - name: Check if release exists locally
         id: check_release
         env: 
-          RELEASE_TAG: $ {{ steps.latest_meshtastic_tag.outputs.result }}
+          RELEASE_TAG: ${{ steps.latest_meshtastic_tag.outputs.result }}
         run: | 
           set -e
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
@@ -98,20 +98,24 @@ jobs:
           cat build_status.env || echo "No status file"
           wait $pid1
 
-  build:
-    runs-on: ubuntulatest
-    needs: preamble
-    strategy:
-      fail-fast: false
-      matrix:
-        target: [nibble-connect, nibble-esp32, nibble-rp2040, nibble-screen-connect]
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.latest_meshtastic_tag.outputs.result }}
+          release_name: Retia binaries for Meshtastic ${{ steps.latest_meshtastic_tag.outputs.result }}
+          body: |
+            Compiled versions of [meshtastic](https://github.com/meshtastic/firmware) for use with retia boards, compiled using meshtastic release ${{ steps.latest_meshtastic_tag.outputs.result }}
+          draft: false
+          prerelease: false
 
-    steps:
-      - name: Build nibble-screen-connect
-        run: |
-          /home/runner/.platformio/penv/bin/platformio run --project-dir /home/runner/meshtastic/platformio.ini -e  ${{ matrix.target }}
-    
-      - name: Archive files
-        run: |
-          tar -cvf /home/runer/dists/${{ matrix.target }}.tar /home/runner/meshtastic/.pio/build/${{ matrix.target }} 
-          zip -r /home/runner/dists/${{ matrix.target }}.zip /home/runner/meshtastic/.pio/build/${{ matrix.target }} 
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: /home/runner/dists/*
+          tag: ${{ steps.latest_meshtastic_tag.outputs.result }}
+          overwrite: true
+          file_glob: true
