@@ -22,6 +22,11 @@ jobs:
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
+      - name: Exit if release already exists
+        if: steps.check_release.outputs.exits = 'true'
+        run: | 
+          echo "Release for this verion of meshtastic already exists. Exiting."
+          exit 1
 
       - name: Install platformIO cli 
         run: |
@@ -31,3 +36,12 @@ jobs:
       - name: Install meshtastic firmware
         run: |
           git clone https://github.com/meshtastic/firmware
+
+      - name: Move retia board files 
+        run: |
+          cp "$GITHUB_WORKSPACE/variants/retia-nibble /home/runner/firmware/variants/ -r
+
+      - name: Build nibble-screen-connect
+        run: |
+          /home/runner/.platformio/penv/bin/platformio /home/runner/firmware/platformio.ini -e nibble-screen-connect
+
