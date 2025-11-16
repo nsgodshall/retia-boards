@@ -55,40 +55,42 @@ jobs:
           
           mkdir -p /home/runner/dists
           : > build_status.env
-          run_build() {
-            target="$1"
-            echo "Starting build: $target"
 
-            /home/runner/.platformio/penv/bin/platformio run \
-              --project-dir /home/runner/meshtastic/platformio.ini \
-              -e "$target"
+          targets=(
+            nibble-connect,
+            nibble-esp32,
+            nibble-rp2040,
+            nibble-screen-connect,
+          )
 
-            status=$?
-            if [ $status -eq 0 ]; then
-              echo "$target=success" >> build_status.env
-              
-              tar -cvf "/home/runner/dists/${target}.tar" \
-                "home/runner/meshtastic/.pio/buid/${target}/*.bin" >/dev/null 2>&1
+          for target in "${targets[@]}"; do
+            echo "Building target: $target"
 
-              zip -r "/home/runner/dists/${target}.zip" \
-                "/home/runner/meshtastic/.pio/build/$target/*.bin" >/dev/null 2>&1
-            else
-              echo "$target=failure" >> build_status.env
-            fi
+          /home/runner/.platformio/penv/bin/platformio run \
+            --project-dir /home/runner/meshtastic/platformio.ini \
+            -e "$target"
 
-            echo "Build $target finished with status $status"
-          }
+          status=$?
           
-          run_build nibble-connect &
-          
-          run_build nibble-screen-connect &
-          
-          run_build nibble-rp2040 &
-          
-          run_build nibble-esp32 &
+          if [ $status -eq 0 ]; then
+            echo "$target=success" >> build_status.env
+            
+            tar -cvf "/home/runner/dists/${target}.tar" \
+              "home/runner/meshtastic/.pio/buid/${target}/*.bin" >/dev/null 2>&1
+
+            zip -r "/home/runner/dists/${target}.zip" \
+              "/home/runner/meshtastic/.pio/build/$target/*.bin" >/dev/null 2>&1
+          else
+            echo "$target=failure" >> build_status.env
+          fi
           
           echo "Build summary: "
           cat build_status.env || echo "No status file"
+          
+          if ! grep -q '=success' build_status.env; then
+            echo "All builds have failed."
+            exit 1
+          fi
 
       - name: Create Release
         id: create_release
