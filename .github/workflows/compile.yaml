@@ -83,8 +83,13 @@ jobs:
                 echo "No bins found, skipping archive"
                 continue
               fi
+              
+              basenames=()
+              for f in "${bin_files[@]}"; do
+                basenames+=("$(basename "$f")")
+              done
 
-              tar -cvf "/home/runner/dists/${target}.tar" "${bin_files[@]}" >/dev/null 2>&1
+              tar -cvf "/home/runner/dists/${target}.tar" -C "${bin_files[@]}" "${basenames[@]}" >/dev/null 2>&1
 
               zip -j "/home/runner/dists/${target}.zip" "${bin_files[@]}" >/dev/null 2>&1
 
