@@ -84,12 +84,10 @@ jobs:
                 continue
               fi
               
-              basenames=()
-              for f in "${bin_files[@]}"; do
-                basenames+=("$(basename "$f")")
-              done
-
-              tar -cvf "/home/runner/dists/${target}.tar" -C "${bin_files[@]}" "${basenames[@]}" >/dev/null 2>&1
+              (
+                cd "${build_dir}"
+                tar -cvf "/home/runner/dists/${target}.tar" ./*.bin >/dev/null 2>&1
+              )
 
               zip -j "/home/runner/dists/${target}.zip" "${bin_files[@]}" >/dev/null 2>&1
 
