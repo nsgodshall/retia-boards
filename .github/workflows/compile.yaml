@@ -18,12 +18,15 @@ jobs:
         id: check_release
         env: 
           RELEASE_TAG: ${{ steps.latest_meshtastic_tag.outputs.result }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: | 
           set -e
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Release $RELEASE_TAG exists."
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Release $RELEASE_TAG does not exists."
           fi
 
       - name: Exit if release already exists
